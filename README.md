@@ -17,25 +17,29 @@ This repository contains two scripts:
 
 1. Clone the repository:
 
+<<<<<<< HEAD
 
 
 \```
+=======
+```
+>>>>>>> 9369d40154688aea3505aadbb646d729ad778a48
 git clone https://github.com/wollooo/pdf-text-extractor.git
 cd pdf-text-extractor
-\```
+```
 
 2. Create a virtual environment and activate it:
 
-\```
+```
 python3 -m venv venv
 source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-\```
+```
 
 3. Install the required dependencies:
 
-\```
+```
 pip install -r requirements.txt
-\```
+```
 
 ## Usage
 
@@ -62,20 +66,20 @@ Replace <username>, <password>, <download_folder>, and <num_files> with your Mon
 
 1. Modify the configuration variables in the `modify_pdfs.py` script to suit your needs:
 
-\```python
+```python
 PDF_DIR = "/path/to/pdf/directory"
 OUTPUT_DIR = "/path/to/output/directory"
 CUTOFF_PERCENT = 10  # Remove 10% of text from the beginning
 PROCESS_PDF_COUNT = 10  # Number of PDFs to process
 PROCESSES = cpu_count()  # Number of parallel processes
-\```
+```
 
 Replace `/path/to/pdf/directory` and `/path/to/output/directory` with the paths to the input and output directories, respectively. You can modify the `CUTOFF_PERCENT` and `PROCESS_PDF_COUNT` variables to change the percentage of text to remove and the number of PDFs to process, respectively.
 
 2. Run the script:
 
-\```
-python pdf_text_extractor.py
-\```
+```
+python scripts/pdf_text_extractor.py
+```
 
 The script will process the specified PDF files in the input directory, remove the specified percentage of text from the beginning, and save the remaining text as plain text files in the output directory.
