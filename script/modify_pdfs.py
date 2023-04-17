@@ -6,6 +6,8 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from pathlib import Path
 from iscc import textid
+import PyPDF2
+from io import BytesIO
 
 # Configuration
 PDF_DIR = "/path/to/pdf/directory"
@@ -20,19 +22,30 @@ def extract_text(args):
     pdf_file, output_dir, cutoff_percentage = args
     parsed_pdf = parser.from_file(pdf_file)
     text = parsed_pdf['content']
-    
+
     collapsed_text = textid.text_collapse(text)
-    
     cutoff_index = int(len(text) * (1 - cutoff_percentage / 100))
     collapsed_text = text[:cutoff_index]
 
     pdf_output_dir = os.path.join(output_dir, Path(pdf_file).stem)
     os.makedirs(pdf_output_dir, exist_ok=True)
-    
-    output_file = os.path.join(pdf_output_dir, f"{Path(pdf_file).stem}_collapsed.txt")
-    with open(output_file, "w") as out_file:
-        out_file.write(collapsed_text)
-    
+
+    output_file = os.path.join(pdf_output_dir, f"{Path(pdf_file).stem}_collapsed.pdf")
+
+    with open(pdf_file, 'rb') as original_file:
+        original_pdf = PyPDF2.PdfReader(original_file)
+
+        new_pdf = PyPDF2.PdfFileWriter()
+        new_pdf.addBlankPage()
+        new_pdf.addPage(original_pdf.getPage(0))
+        new_pdf.pages[0].extract_text = lambda: collapsed_text
+
+        for key, value in original_pdf.getDocumentInfo().items():
+            new_pdf.addMetadata({key: value})
+
+        with open(output_file, 'wb') as output_pdf:
+            new_pdf.write(output_pdf)
+
     shutil.copy(pdf_file, pdf_output_dir)
     return pdf_file
 
