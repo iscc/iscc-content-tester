@@ -17,14 +17,8 @@ This repository contains two scripts:
 
 1. Clone the repository:
 
-<<<<<<< HEAD
-
-
-\```
-=======
 ```
->>>>>>> 9369d40154688aea3505aadbb646d729ad778a48
-git clone https://github.com/wollooo/pdf-text-extractor.git
+git clone https://github.com/iscc/iscc-content-tester.git
 cd pdf-text-extractor
 ```
 
@@ -47,18 +41,18 @@ pip install -r requirements.txt
 
 1. Modify the configuration variables in the `download_pdfs_from_mongo.py` script to suit your needs:
 
-\```python
+```python
 USERNAME = 'user'
 PASSWORD = 'passwort'
 DOWNLOAD_FOLDER = 'downloads'  # Default download folder
 NUM_FILES = 5  # Default number of files to download
-\```
+```
 Replace user and passwort with your MongoDB credentials.
 
 2. Run the script:
-\```python
+```python
 python download_pdfs_from_mongo.py <username> <password> <download_folder> <num_files>
-\```
+```
 
 Replace <username>, <password>, <download_folder>, and <num_files> with your MongoDB credentials, the desired download folder, and the number of files you want to download, respectively.
 
