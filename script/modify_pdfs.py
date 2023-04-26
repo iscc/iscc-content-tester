@@ -2,21 +2,24 @@ import os
 import shutil
 import tika
 from tika import parser
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, cpu_count, Queue
 from tqdm import tqdm
 from pathlib import Path
-from iscc import textid
+from iscc_sdk import text_extract
 import PyPDF2
 from io import BytesIO
 
 # Configuration
-PDF_DIR = "/path/to/pdf/directory"
-OUTPUT_DIR = "/path/to/output/directory"
+PDF_DIR = "/tmp/openalex-pdfs"
+OUTPUT_DIR = "/tmp/iscc-media/modified_pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
 PROCESS_PDF_COUNT = 10  # Number of PDFs to process
 PROCESSES = cpu_count()  # Number of parallel processes
 
-tika.initVM()
+def init_tika(queue):
+    global TIKA_QUEUE
+    TIKA_QUEUE = queue
+    tika.initVM()
 
 def extract_text(args):
     pdf_file, output_dir, cutoff_percentage = args
@@ -50,7 +53,8 @@ def extract_text(args):
     return pdf_file
 
 def process_pdfs(pdf_list, output_dir, cutoff_percentage):
-    with Pool(PROCESSES) as pool:
+    queue = Queue()
+    with Pool(PROCESSES, initializer=init_tika, initargs=(queue,)) as pool:
         tasks = [(pdf, output_dir, cutoff_percentage) for pdf in pdf_list]
         progress_bar = tqdm(total=len(tasks), desc="Processing PDFs")
         for processed_file in pool.imap_unordered(extract_text, tasks):
