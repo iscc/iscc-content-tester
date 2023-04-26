@@ -2,7 +2,7 @@ import os
 import shutil
 import tika
 from tika import parser
-from multiprocessing import Pool, cpu_count, Queue
+from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 from pathlib import Path
 from iscc_sdk import text_extract
@@ -14,19 +14,16 @@ PDF_DIR = "/tmp/openalex-pdfs"
 OUTPUT_DIR = "/tmp/iscc-media/modified_pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
 PROCESS_PDF_COUNT = 10  # Number of PDFs to process
-PROCESSES = cpu_count()  # Number of parallel processes
+THREADS = 16 # Number of threads
 
-def init_tika(queue):
-    global TIKA_QUEUE
-    TIKA_QUEUE = queue
-    tika.initVM()
+tika.initVM()
 
 def extract_text(args):
     pdf_file, output_dir, cutoff_percentage = args
     parsed_pdf = parser.from_file(pdf_file)
     text = parsed_pdf['content']
 
-    collapsed_text = textid.text_collapse(text)
+    collapsed_text = text_extract(text)
     cutoff_index = int(len(text) * (1 - cutoff_percentage / 100))
     collapsed_text = text[:cutoff_index]
 
@@ -53,11 +50,12 @@ def extract_text(args):
     return pdf_file
 
 def process_pdfs(pdf_list, output_dir, cutoff_percentage):
-    queue = Queue()
-    with Pool(PROCESSES, initializer=init_tika, initargs=(queue,)) as pool:
-        tasks = [(pdf, output_dir, cutoff_percentage) for pdf in pdf_list]
+    tasks = [(pdf, output_dir, cutoff_percentage) for pdf in pdf_list]
+    with ThreadPoolExecutor(max_workers=THREADS) as executor:
         progress_bar = tqdm(total=len(tasks), desc="Processing PDFs")
-        for processed_file in pool.imap_unordered(extract_text, tasks):
+        futures = [executor.submit(extract_text, task) for task in tasks]
+        for future in futures:
+            processed_file = future.result()
             progress_bar.update(1)
             progress_bar.set_postfix({"Processed": Path(processed_file).name})
     progress_bar.close()
@@ -72,6 +70,6 @@ if __name__ == "__main__":
     print(f"Output Directory: {OUTPUT_DIR}")
     print(f"Cutoff Percentage: {CUTOFF_PERCENTAGE}%")
     print(f"Number of PDFs to process: {PROCESS_PDF_COUNT}")
-    print(f"Number of parallel processes: {PROCESSES}\n")
+    print(f"Number of threads: {THREADS}\n")
 
     process_pdfs(pdf_files, OUTPUT_DIR, CUTOFF_PERCENTAGE)
