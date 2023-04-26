@@ -1,27 +1,22 @@
 import os
 import shutil
-import tika
-from tika import parser
-from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm
+from multiprocessing import Pool
 from pathlib import Path
+from tqdm import tqdm
 from iscc_sdk import text_extract
 import PyPDF2
-from io import BytesIO
+import textract
 
 # Configuration
 PDF_DIR = "/tmp/openalex-pdfs"
 OUTPUT_DIR = "/tmp/iscc-media/modified_pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
-PROCESS_PDF_COUNT = 10  # Number of PDFs to process
-THREADS = 16 # Number of threads
-
-tika.initVM()
+PROCESS_PDF_COUNT = 100  # Number of PDFs to process
+PROCESSES = 16  # Number of processes
 
 def extract_text(args):
     pdf_file, output_dir, cutoff_percentage = args
-    parsed_pdf = parser.from_file(pdf_file)
-    text = parsed_pdf['content']
+    text = textract.process(pdf_file, method='pdfminer', encoding='utf-8').decode('utf-8')
 
     collapsed_text = text_extract(text)
     cutoff_index = int(len(text) * (1 - cutoff_percentage / 100))
@@ -51,11 +46,10 @@ def extract_text(args):
 
 def process_pdfs(pdf_list, output_dir, cutoff_percentage):
     tasks = [(pdf, output_dir, cutoff_percentage) for pdf in pdf_list]
-    with ThreadPoolExecutor(max_workers=THREADS) as executor:
+    with Pool(processes=PROCESSES) as pool:
         progress_bar = tqdm(total=len(tasks), desc="Processing PDFs")
-        futures = [executor.submit(extract_text, task) for task in tasks]
-        for future in futures:
-            processed_file = future.result()
+        results = pool.imap_unordered(extract_text, tasks)
+        for processed_file in results:
             progress_bar.update(1)
             progress_bar.set_postfix({"Processed": Path(processed_file).name})
     progress_bar.close()
@@ -70,6 +64,6 @@ if __name__ == "__main__":
     print(f"Output Directory: {OUTPUT_DIR}")
     print(f"Cutoff Percentage: {CUTOFF_PERCENTAGE}%")
     print(f"Number of PDFs to process: {PROCESS_PDF_COUNT}")
-    print(f"Number of threads: {THREADS}\n")
+    print(f"Number of processes: {PROCESSES}\n")
 
     process_pdfs(pdf_files, OUTPUT_DIR, CUTOFF_PERCENTAGE)
