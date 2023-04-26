@@ -24,7 +24,7 @@ def extract_text(args):
     pdf_output_dir = os.path.join(output_dir, Path(pdf_file).stem)
     os.makedirs(pdf_output_dir, exist_ok=True)
 
-    output_file = os.path.join(pdf_output_dir, f"{Path(pdf_file).stem}_collapsed.pdf")
+    output_file = os.path.join(pdf_output_dir, f"{Path(pdf_file).stem}_collapsed{Path(pdf_file).suffix}")
 
     with open(pdf_file, 'rb') as original_file:
         original_pdf = PyPDF2.PdfReader(original_file)
