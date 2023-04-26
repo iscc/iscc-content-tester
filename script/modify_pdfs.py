@@ -34,7 +34,7 @@ def extract_text(args):
         page_0_height = page_0.mediabox.height
         new_pdf = PyPDF2.PdfWriter()
         new_pdf.add_blank_page(width=page_0_width, height=page_0_height)
-        new_pdf.addPage(page_0)
+        new_pdf.add_Page(page_0)
         new_pdf.pages[0].extract_text = lambda: collapsed_text
 
         for key, value in original_pdf.getDocumentInfo().items():
