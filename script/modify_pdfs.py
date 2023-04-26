@@ -38,9 +38,8 @@ def extract_text(args):
         new_pdf.pages[0].extract_text = lambda: collapsed_text
 
         new_pdf.add_metadata(original_pdf.metadata)
-
-        with open(output_file, 'wb') as output_pdf:
-            new_pdf.write(output_pdf)
+        
+        new_pdf.write(output_file)
 
     shutil.copy(pdf_file, pdf_output_dir)
     return pdf_file
