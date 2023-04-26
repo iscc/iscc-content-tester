@@ -19,7 +19,7 @@ This repository contains two scripts:
 
 ```
 git clone https://github.com/iscc/iscc-content-tester.git
-cd pdf-text-extractor
+cd iscc-content-tester
 ```
 
 2. Create a virtual environment and activate it:
