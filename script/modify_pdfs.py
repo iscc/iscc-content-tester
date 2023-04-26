@@ -29,7 +29,7 @@ def extract_text(args):
     with open(pdf_file, 'rb') as original_file:
         original_pdf = PyPDF2.PdfReader(original_file)
 
-        new_pdf = PyPDF2.PdfFileWriter()
+        new_pdf = PyPDF2.PdfWriter()
         new_pdf.addBlankPage()
         new_pdf.addPage(original_pdf.getPage(0))
         new_pdf.pages[0].extract_text = lambda: collapsed_text
