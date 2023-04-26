@@ -5,18 +5,19 @@ from pathlib import Path
 from tqdm import tqdm
 from iscc_sdk import text_extract
 import PyPDF2
-import textract
+import pdfplumber
 
 # Configuration
 PDF_DIR = "/tmp/openalex-pdfs"
 OUTPUT_DIR = "/tmp/iscc-media/modified_pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
-PROCESS_PDF_COUNT = 100  # Number of PDFs to process
+PROCESS_PDF_COUNT = 10  # Number of PDFs to process
 PROCESSES = 16  # Number of processes
 
 def extract_text(args):
     pdf_file, output_dir, cutoff_percentage = args
-    text = textract.process(pdf_file, method='pdfminer', encoding='utf-8').decode('utf-8')
+    with pdfplumber.open(pdf_file) as pdf:
+        text = "\n".join(page.extract_text() for page in pdf.pages)
 
     collapsed_text = text_extract(text)
     cutoff_index = int(len(text) * (1 - cutoff_percentage / 100))
