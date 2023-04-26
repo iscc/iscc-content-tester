@@ -3,7 +3,6 @@ import shutil
 from multiprocessing import Pool
 from pathlib import Path
 from tqdm import tqdm
-from iscc_sdk import text_extract
 import PyPDF2
 import pdfplumber
 
@@ -19,7 +18,6 @@ def extract_text(args):
     with pdfplumber.open(pdf_file) as pdf:
         text = "\n".join(page.extract_text() for page in pdf.pages)
 
-    collapsed_text = text_extract(text)
     cutoff_index = int(len(text) * (1 - cutoff_percentage / 100))
     collapsed_text = text[:cutoff_index]
 
