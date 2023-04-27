@@ -1,55 +1,56 @@
 import os
 import shutil
-from multiprocessing import Pool
-from pathlib import Path
+from functools import partial
+from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
-import PyPDF2
-import pdfplumber
+from pathlib import Path
+from PyPDF4 import PdfFileReader, PdfFileWriter
 
 # Configuration
 PDF_DIR = "/tmp/openalex-pdfs"
 OUTPUT_DIR = "/tmp/iscc-media/modified_pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
 PROCESS_PDF_COUNT = 10  # Number of PDFs to process
-PROCESSES = 16  # Number of processes
+PROCESSES = 1  # Number of processes
 
-def extract_text(args):
-    pdf_file, output_dir, cutoff_percentage = args
-    with pdfplumber.open(pdf_file) as pdf:
-        text = "\n".join(page.extract_text() for page in pdf.pages)
-
-    cutoff_index = int(len(text) * (1 - cutoff_percentage / 100))
-    collapsed_text = text[:cutoff_index]
-
-    pdf_output_dir = os.path.join(output_dir, Path(pdf_file).stem)
+def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
+    pdf_folder_name = Path(input_pdf).stem
+    pdf_output_dir = os.path.join(output_dir, pdf_folder_name)
     os.makedirs(pdf_output_dir, exist_ok=True)
 
-    output_file = os.path.join(pdf_output_dir, f"{Path(pdf_file).stem}_collapsed{Path(pdf_file).suffix}")
+    output_pdf = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.pdf")
+    original_pdf_path = os.path.join(pdf_output_dir, os.path.basename(input_pdf))
 
-    with open(pdf_file, 'rb') as original_file:
-        original_pdf = PyPDF2.PdfReader(original_file)
+    with open(input_pdf, 'rb') as original_file:
+        original_pdf = PdfFileReader(original_file)
+        new_pdf = PdfFileWriter()
 
-        page_0 = original_pdf.pages[0]
-        page_0_width = page_0.mediabox.width
-        page_0_height = page_0.mediabox.height
-        new_pdf = PyPDF2.PdfWriter()
-        new_pdf.add_blank_page(width=page_0_width, height=page_0_height)
-        new_pdf.add_page(page_0)
-        new_pdf.pages[0].extract_text = lambda: collapsed_text
+        # Copy metadata
+        for key, value in original_pdf.getDocumentInfo().items():
+            new_pdf.addMetadata({key: value})
 
-        new_pdf.add_metadata(original_pdf.metadata)
-        
-        new_pdf.write(output_file)
+        # Calculate the number of pages to keep (90%)
+        num_pages = original_pdf.getNumPages()
+        keep_pages = int(num_pages * (1 - cutoff_percentage / 100))
 
-    shutil.copy(pdf_file, pdf_output_dir)
-    return pdf_file
+        # Add the first 90% of the pages to the new PDF
+        for i in range(keep_pages):
+            new_pdf.addPage(original_pdf.getPage(i))
+
+        # Save the new PDF
+        with open(output_pdf, 'wb') as output_file:
+            new_pdf.write(output_file)
+
+    # Copy the original PDF
+    shutil.copy(input_pdf, original_pdf_path)
+
+    return input_pdf
 
 def process_pdfs(pdf_list, output_dir, cutoff_percentage):
-    tasks = [(pdf, output_dir, cutoff_percentage) for pdf in pdf_list]
-    with Pool(processes=PROCESSES) as pool:
-        progress_bar = tqdm(total=len(tasks), desc="Processing PDFs")
-        results = pool.imap_unordered(extract_text, tasks)
-        for processed_file in results:
+    with Pool(PROCESSES) as pool:
+        func = partial(extract_and_modify_pdf, output_dir, cutoff_percentage)
+        progress_bar = tqdm(total=len(pdf_list), desc="Processing PDFs")
+        for processed_file in pool.imap_unordered(func, pdf_list):
             progress_bar.update(1)
             progress_bar.set_postfix({"Processed": Path(processed_file).name})
     progress_bar.close()
