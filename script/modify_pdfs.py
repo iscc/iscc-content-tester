@@ -23,6 +23,15 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
 
     with open(input_pdf, 'rb') as original_file:
         original_pdf = PdfFileReader(original_file)
+
+        # Decrypt the PDF if it is encrypted
+        if original_pdf.isEncrypted:
+            try:
+                original_pdf.decrypt('')
+            except Exception as e:
+                print(f"Error decrypting {input_pdf}: {e}")
+                return input_pdf
+
         new_pdf = PdfFileWriter()
 
         # Copy metadata
