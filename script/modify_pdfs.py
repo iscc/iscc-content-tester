@@ -5,6 +5,9 @@ from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from pathlib import Path
 from PyPDF4 import PdfFileReader, PdfFileWriter
+import warnings
+from PyPDF4.utils import PdfReadWarning
+warnings.filterwarnings("ignore", category=PdfReadWarning)
 
 # Configuration
 PDF_DIR = "/iscc/openalex-pdfs"
@@ -21,48 +24,41 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
     output_pdf = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.pdf")
     original_pdf_path = os.path.join(pdf_output_dir, os.path.basename(input_pdf))
 
-    with open(input_pdf, 'rb') as original_file:
-        original_pdf = PdfFileReader(original_file)
+    try:
+        with open(input_pdf, 'rb') as original_file:
+            original_pdf = PdfFileReader(original_file)
 
-        # Decrypt the PDF if it is encrypted
-        if original_pdf.isEncrypted:
-            try:
-                original_pdf.decrypt('')
-            except Exception as e:
-                print(f"Error decrypting {input_pdf}: {e}")
-                shutil.rmtree(pdf_output_dir)  # Delete the folder
-                return input_pdf
+            # Decrypt the PDF if it is encrypted
+            if original_pdf.isEncrypted:
+                try:
+                    original_pdf.decrypt('')
+                except Exception as e:
+                    print(f"Error decrypting {input_pdf}: {e}")
+                    return input_pdf
 
-        new_pdf = PdfFileWriter()
+            new_pdf = PdfFileWriter()
 
-        # Copy metadata
-        try:
+            # Copy metadata
             for key, value in original_pdf.getDocumentInfo().items():
                 new_pdf.addMetadata({key: str(value)})
-        except Exception as e:
-            print(f"Error copying metadata for {input_pdf}: {e}")
-            return input_pdf
 
-        # Calculate the number of pages to keep (90%)
-        num_pages = original_pdf.getNumPages()
-        keep_pages = int(num_pages * (1 - cutoff_percentage / 100))
+            # Calculate the number of pages to keep (90%)
+            num_pages = original_pdf.getNumPages()
+            keep_pages = int(num_pages * (1 - cutoff_percentage / 100))
 
-        # Add the first 90% of the pages to the new PDF
-        for i in range(keep_pages):
-            new_pdf.addPage(original_pdf.getPage(i))
+            # Add the first 90% of the pages to the new PDF
+            for i in range(keep_pages):
+                new_pdf.addPage(original_pdf.getPage(i))
 
-        # Save the new PDF
-        with open(output_pdf, 'wb') as output_file:
-            new_pdf.write(output_file)
+            # Save the new PDF
+            with open(output_pdf, 'wb') as output_file:
+                new_pdf.write(output_file)
 
-        # Check if the modified PDF has fewer pages than the original
-        if new_pdf.getNumPages() >= original_pdf.getNumPages():
-            print(f"Error: The collapsed PDF has not reduced the number of pages for {input_pdf}")
-            shutil.rmtree(pdf_output_dir)  # Delete the folder
-            return input_pdf
-
-    # Copy the original PDF
-    shutil.copy(input_pdf, original_pdf_path)
+        # Copy the original PDF
+        shutil.copy(input_pdf, original_pdf_path)
+    except Exception as e:
+        print(f"Error processing {input_pdf}: {e}")
+        return input_pdf
 
     return input_pdf
 
