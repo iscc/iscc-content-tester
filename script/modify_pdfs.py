@@ -7,8 +7,8 @@ from pathlib import Path
 from PyPDF4 import PdfFileReader, PdfFileWriter
 
 # Configuration
-PDF_DIR = "/tmp/openalex-pdfs"
-OUTPUT_DIR = "/tmp/iscc-media/modified_pdfs"
+PDF_DIR = "/iscc/openalex-pdfs"
+OUTPUT_DIR = "/iscc/pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
 PROCESS_PDF_COUNT = 10  # Number of PDFs to process
 PROCESSES = 1  # Number of processes
@@ -30,6 +30,7 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
                 original_pdf.decrypt('')
             except Exception as e:
                 print(f"Error decrypting {input_pdf}: {e}")
+                shutil.rmtree(pdf_output_dir)  # Delete the folder
                 return input_pdf
 
         new_pdf = PdfFileWriter()
@@ -49,6 +50,12 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
         # Save the new PDF
         with open(output_pdf, 'wb') as output_file:
             new_pdf.write(output_file)
+
+        # Check if the modified PDF has fewer pages than the original
+        if new_pdf.getNumPages() >= original_pdf.getNumPages():
+            print(f"Error: The collapsed PDF has not reduced the number of pages for {input_pdf}")
+            shutil.rmtree(pdf_output_dir)  # Delete the folder
+            return input_pdf
 
     # Copy the original PDF
     shutil.copy(input_pdf, original_pdf_path)
