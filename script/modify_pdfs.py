@@ -32,7 +32,7 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
                     print(f"Error decrypting {input_pdf}: {e}")
                     return input_pdf
 
-            os.makedirs(pdf_output_dir, exist_ok=True)  # Moved inside the try block
+            os.makedirs(pdf_output_dir, exist_ok=True)
 
             output_pdf = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.pdf")
             original_pdf_path = os.path.join(pdf_output_dir, os.path.basename(input_pdf))
@@ -55,11 +55,15 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
             with open(output_pdf, 'wb') as output_file:
                 new_pdf.write(output_file)
 
-            # Copy the original PDF
-            shutil.copy(input_pdf, original_pdf_path)
     except Exception as e:
         print(f"Error processing {input_pdf}: {e}")
         return input_pdf
+    finally:
+        # Copy the original PDF to the output directory even if an error occurs
+        if not os.path.exists(pdf_output_dir):
+            os.makedirs(pdf_output_dir, exist_ok=True)
+        original_pdf_path = os.path.join(pdf_output_dir, os.path.basename(input_pdf))
+        shutil.copy(input_pdf, original_pdf_path)
 
     return input_pdf
 
