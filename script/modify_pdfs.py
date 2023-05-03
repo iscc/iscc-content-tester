@@ -10,7 +10,7 @@ from PyPDF4 import PdfFileReader, PdfFileWriter
 PDF_DIR = "/iscc/openalex-pdfs"
 OUTPUT_DIR = "/iscc/pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
-PROCESS_PDF_COUNT = 10  # Number of PDFs to process
+PROCESS_PDF_COUNT = 1000  # Number of PDFs to process
 PROCESSES = 1  # Number of processes
 
 def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
@@ -37,7 +37,7 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
 
         # Copy metadata
         for key, value in original_pdf.getDocumentInfo().items():
-            new_pdf.addMetadata({key: value})
+            new_pdf.addMetadata({key: str(value)})
 
         # Calculate the number of pages to keep (90%)
         num_pages = original_pdf.getNumPages()
