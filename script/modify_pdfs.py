@@ -19,10 +19,6 @@ PROCESSES = 1  # Number of processes
 def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
     pdf_folder_name = Path(input_pdf).stem
     pdf_output_dir = os.path.join(output_dir, pdf_folder_name)
-    os.makedirs(pdf_output_dir, exist_ok=True)
-
-    output_pdf = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.pdf")
-    original_pdf_path = os.path.join(pdf_output_dir, os.path.basename(input_pdf))
 
     try:
         with open(input_pdf, 'rb') as original_file:
@@ -35,6 +31,11 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
                 except Exception as e:
                     print(f"Error decrypting {input_pdf}: {e}")
                     return input_pdf
+
+            os.makedirs(pdf_output_dir, exist_ok=True)  # Moved inside the try block
+
+            output_pdf = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.pdf")
+            original_pdf_path = os.path.join(pdf_output_dir, os.path.basename(input_pdf))
 
             new_pdf = PdfFileWriter()
 
@@ -54,8 +55,8 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
             with open(output_pdf, 'wb') as output_file:
                 new_pdf.write(output_file)
 
-        # Copy the original PDF
-        shutil.copy(input_pdf, original_pdf_path)
+            # Copy the original PDF
+            shutil.copy(input_pdf, original_pdf_path)
     except Exception as e:
         print(f"Error processing {input_pdf}: {e}")
         return input_pdf
