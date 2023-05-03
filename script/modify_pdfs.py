@@ -36,8 +36,12 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
         new_pdf = PdfFileWriter()
 
         # Copy metadata
-        for key, value in original_pdf.getDocumentInfo().items():
-            new_pdf.addMetadata({key: str(value)})
+        try:
+            for key, value in original_pdf.getDocumentInfo().items():
+                new_pdf.addMetadata({key: str(value)})
+        except Exception as e:
+            print(f"Error copying metadata for {input_pdf}: {e}")
+            return input_pdf
 
         # Calculate the number of pages to keep (90%)
         num_pages = original_pdf.getNumPages()
