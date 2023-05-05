@@ -4,54 +4,44 @@ from functools import partial
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from pathlib import Path
-from PyPDF4 import PdfFileReader
+from tika import parser
 import warnings
-from PyPDF4.utils import PdfReadWarning
-warnings.filterwarnings("ignore", category=PdfReadWarning)
 
 # Configuration
 PDF_DIR = "/iscc/openalex-pdfs"
-OUTPUT_DIR = "/iscc/plain_pdfs"
+OUTPUT_DIR = "/iscc/pdfs"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the end
 PROCESS_PDF_COUNT = 1000  # Number of PDFs to process
-PROCESSES = 1  # Number of processes
+PROCESSES = 16  # Number of processes
 
 def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
     pdf_folder_name = Path(input_pdf).stem
     pdf_output_dir = os.path.join(output_dir, pdf_folder_name)
 
     try:
-        with open(input_pdf, 'rb') as original_file:
-            original_pdf = PdfFileReader(original_file)
+        # Parse the PDF using Tika
+        parsed_pdf = parser.from_file(input_pdf)
+        original_text = parsed_pdf['content']
 
-            # Decrypt the PDF if it is encrypted
-            if original_pdf.isEncrypted:
-                try:
-                    original_pdf.decrypt('')
-                except Exception as e:
-                    print(f"Error decrypting {input_pdf}: {e}")
-                    return input_pdf
+        # Calculate the number of characters to keep (90%)
+        text_length = len(original_text)
+        keep_chars = int(text_length * (1 - cutoff_percentage / 100))
 
-            os.makedirs(pdf_output_dir, exist_ok=True)
+        # Split the text into the original and the modified parts
+        modified_text = original_text[:keep_chars]
 
-            output_txt = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.txt")
-            original_txt = os.path.join(pdf_output_dir, f"{pdf_folder_name}_original.txt")
+        os.makedirs(pdf_output_dir, exist_ok=True)
 
-            # Calculate the number of pages to keep (90%)
-            num_pages = original_pdf.getNumPages()
-            keep_pages = int(num_pages * (1 - cutoff_percentage / 100))
+        output_txt = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.txt")
+        original_txt = os.path.join(pdf_output_dir, f"{pdf_folder_name}.txt")
 
-            # Save the original PDF as plain text
-            with open(original_txt, 'w', encoding='utf-8') as original_file:
-                for i in range(num_pages):
-                    page_text = original_pdf.getPage(i).extractText()
-                    original_file.write(page_text)
+        # Save the original PDF as plain text
+        with open(original_txt, 'w', encoding='utf-8') as original_file:
+            original_file.write(original_text)
 
-            # Save the modified PDF as plain text
-            with open(output_txt, 'w', encoding='utf-8') as output_file:
-                for i in range(keep_pages):
-                    page_text = original_pdf.getPage(i).extractText()
-                    output_file.write(page_text)
+        # Save the modified PDF as plain text
+        with open(output_txt, 'w', encoding='utf-8') as output_file:
+            output_file.write(modified_text)
 
     except Exception as e:
         print(f"Error processing {input_pdf}: {e}")
