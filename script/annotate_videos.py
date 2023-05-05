@@ -1,26 +1,23 @@
-import os
 import json
-import configparser
+import os
 
-# Read the configuration file
-config = configparser.ConfigParser()
-config.read('config.ini')
+annotation_file = "/iscc/git/FIVR-200K/dataset/annotation.json"
+src_dir = "/iscc/videos720/"
+dest_dir = "/iscc/annotated_videos/"
 
-# Get the paths from the configuration file
-annotations_file = '/iscc/git/FIVR-200K/dataset/annotation.json'
-src_dir = '/iscc/videos720/'
-dest_dir = '/iscc/annotated_videos/'
+with open(annotation_file, "r") as f:
+    data = json.load(f)
 
-# Read the annotations from the JSON file
-with open(annotations_file, 'r') as f:
-    annotations = json.load(f)
-
-# Create a new directory for each annotation and save the corresponding files
-for annotation in annotations:
-    directory_name = annotation
-    os.makedirs(os.path.join(dest_dir, directory_name), exist_ok=True)
-    for file_id in annotations[annotation]:
-        file_name = file_id + '.mp4'
-        src_path = os.path.join(src_dir, file_name)
-        dest_path = os.path.join(dest_dir, directory_name, file_name)
-        os.rename(src_path, dest_path)
+for video in data["videos"]:
+    video_name = video["video_id"] + ".mp4"
+    if os.path.isfile(os.path.join(src_dir, video_name)):
+        for annotation in video["annotations"]:
+            start_time = annotation["segment"][0]
+            end_time = annotation["segment"][1]
+            dest_path = os.path.join(dest_dir, annotation["query"], video_name)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            src_path = os.path.join(src_dir, video_name)
+            os.system(f"ffmpeg -i {src_path} -ss {start_time} -to {end_time} -c:v libx264 -c:a aac -strict experimental -b:a 192k -ac 2 -ar 44100 -vf scale=640:360 {dest_path}")
+            print(f"Video '{video_name}' annotated with query '{annotation['query']}' and saved to '{dest_path}'")
+    else:
+        print(f"Video '{video_name}' not found in '{src_dir}'")
