@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 
 annotation_file = "/iscc/git/FIVR-200K/dataset/annotation.json"
 src_dir = "/iscc/videos720/"
@@ -11,12 +12,8 @@ with open(annotation_file, "r") as f:
 
 # Loop through videos in the annotation data
 for video_id, video_data in data.items():
-    video_file = video_data["file_path"].split("/")[-1]
-    src_path = os.path.join(src_dir, video_file)
-    dest_path = os.path.join(dest_dir, video_data["query"], video_file)
-    
-    # Create directory if it doesn't exist
-    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-    
-    # Move video file to destination directory
-    os.rename(src_path, dest_path)
+    for event_type, event_videos in video_data.items():
+        for video_file in event_videos:
+            src_path = os.path.join(src_dir, video_file + ".mp4")
+            dest_path = os.path.join(dest_dir, event_type, video_file + ".mp4")
+            shutil.copyfile(src_path, dest_path)
