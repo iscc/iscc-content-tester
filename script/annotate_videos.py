@@ -12,8 +12,17 @@ with open(annotation_file, "r") as f:
 
 # Loop through videos in the annotation data
 for video_id, video_data in data.items():
-    for event_type, event_videos in video_data.items():
-        for video_file in event_videos:
+    for query in video_data:
+        query_dir = os.path.join(dest_dir, query)
+        if not os.path.exists(query_dir):
+            os.makedirs(query_dir)
+
+        for video_file in video_data[query]:
             src_path = os.path.join(src_dir, video_file + ".mp4")
-            dest_path = os.path.join(dest_dir, event_type, video_file + ".mp4")
+            dest_path = os.path.join(query_dir, video_file + ".mp4")
+            if not os.path.exists(src_path):
+                print(f"{src_path} does not exist, skipping...")
+                continue
+
             shutil.copyfile(src_path, dest_path)
+            print(f"Video {video_file}.mp4 copied to {query_dir}")
