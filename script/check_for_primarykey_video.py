@@ -1,34 +1,37 @@
 import os
+import json
 
-primary_keys = ["ytHe8aJyjfk", "QXNIyKLfbJ4"]
-video_dir = "/iscc/videos720"
+# Set the path to the video directory
+video_dir = '/iscc/videos720'
 
-available_videos = {}
-missing_videos = {}
+# Set the path to the annotation file
+annotation_file = '/iscc/git/FIVR-200K/dataset/annotation.json'
 
+# Load the annotation file
+with open(annotation_file, 'r') as f:
+    data = json.load(f)
+
+# Get the list of primary keys
+primary_keys = list(data.keys())
+
+# Initialize lists to store available and missing videos
+available_videos = []
+missing_videos = []
+
+# Loop through the primary keys
 for key in primary_keys:
-    video_files = []
-    for subkey, subvalue in data.get(key, {}).items():
-        video_files += [f"{key}_{subkey}_{video}.mp4" for video in subvalue]
-    
-    available_videos[key] = []
-    missing_videos[key] = []
+    # Get the file name for the primary key video
+    file_name = key + '.mp4'
 
-    for video_file in video_files:
-        video_path = os.path.join(video_dir, video_file)
-        if os.path.isfile(video_path):
-            available_videos[key].append(video_file)
-        else:
-            missing_videos[key].append(video_file)
+    # Check if the video file exists in the video directory
+    if os.path.isfile(os.path.join(video_dir, file_name)):
+        available_videos.append(key)
+    else:
+        missing_videos.append(key)
 
-print("Available videos:")
-for key, videos in available_videos.items():
-    print(f"{key}: {len(videos)} videos")
-    for video in videos:
-        print(video)
-
-print("\nMissing videos:")
-for key, videos in missing_videos.items():
-    print(f"{key}: {len(videos)} videos")
-    for video in videos:
-        print(video)
+# Print the results
+print('Available videos:')
+print(available_videos)
+print()
+print('Missing videos:')
+print(missing_videos)
