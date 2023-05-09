@@ -39,7 +39,8 @@ for key in data:
             shutil.copyfile(src_path, dest_path)
             pbar.update(1)
             remaining_videos = total_videos - pbar.n
-            pbar.set_postfix(completed=f"{pbar.n}/{total_videos}", eta=f"{remaining_videos // pbar.rate:.0f}s")
+            pbar.set_postfix(completed=f"{pbar.n}/{total_videos}", 
+                             eta=f"{remaining_videos // pbar.refresh_rate:.0f}s")
             print(f"Copied video {video_id} to {dest_path}")
             
 print("Copying complete!")
