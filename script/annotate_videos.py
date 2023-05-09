@@ -35,4 +35,4 @@ for key in data:
             shutil.copyfile(src_path, dest_path)
             pbar.update(1)
             remaining_videos = total_videos - pbar.n
-            pbar.set_postfix(eta=f"{remaining_videos // pbar.avg:.0f}s")
+            pbar.set_postfix(eta=f"{remaining_videos // pbar.average:.0f}s")
