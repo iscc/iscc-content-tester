@@ -1,28 +1,32 @@
 import os
-import json
 import shutil
+import json
+from tqdm import tqdm
 
-annotation_file = "/iscc/git/FIVR-200K/dataset/annotation.json"
-src_dir = "/iscc/videos720/"
-dest_dir = "/iscc/annotated_videos/"
+# set input and output directories
+input_dir = "/iscc/videos720/"
+output_dir = "/iscc/annotated_videos/"
 
-# Load annotation data from JSON file
-with open(annotation_file, "r") as f:
-    data = json.load(f)
+# load annotation data
+with open('/iscc/git/FIVR-200K/dataset/annotation.json', 'r') as f:
+    annotation = json.load(f)
 
-# Loop through videos in the annotation data
-for video_id, video_data in data.items():
-    for query in video_data:
-        query_dir = os.path.join(dest_dir, query)
-        if not os.path.exists(query_dir):
-            os.makedirs(query_dir)
-
-        for video_file in video_data[query]:
-            src_path = os.path.join(src_dir, video_file + ".mp4")
-            dest_path = os.path.join(query_dir, video_file + ".mp4")
-            if not os.path.exists(src_path):
-                print(f"{src_path} does not exist, skipping...")
-                continue
-
-            shutil.copyfile(src_path, dest_path)
-            print(f"Video {video_file}.mp4 copied to {query_dir}")
+# iterate over each video and copy it to the corresponding directory
+total_videos = sum(len(v) for k, v in annotation.items() for kk, vv in v.items() for _ in vv)
+with tqdm(total=total_videos, desc="Copying videos") as pbar:
+    for video_id, video_data in annotation.items():
+        video_dir = os.path.join(output_dir, video_id)
+        os.makedirs(video_dir, exist_ok=True)
+        for query_type, query_list in video_data.items():
+            query_dir = os.path.join(video_dir, query_type)
+            os.makedirs(query_dir, exist_ok=True)
+            for query in query_list:
+                src_path = os.path.join(input_dir, query + ".mp4")
+                dest_path = os.path.join(query_dir, query + ".mp4")
+                if os.path.exists(src_path):
+                    shutil.copyfile(src_path, dest_path)
+                    pbar.update(1)
+                    remaining_videos = total_videos - pbar.n
+                    pbar.set_postfix(eta=f"{remaining_videos // pbar.rate:.0f}s")
+                else:
+                    print(f"Skipping {src_path}: File does not exist")
