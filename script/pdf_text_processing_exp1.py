@@ -9,7 +9,7 @@ import warnings
 
 # Configuration
 PDF_DIR = "/iscc/openalex-pdfs"
-OUTPUT_DIR = "/iscc/pdfs"
+OUTPUT_DIR = "/iscc/txt_exp1"
 CUTOFF_PERCENTAGE = 10  # Remove 10% of text from the beginning of the half text
 PROCESS_PDF_COUNT = 1000  # Number of PDFs to process
 PROCESSES = 16  # Number of processes
@@ -27,7 +27,7 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
         # Split the text into the original and the modified parts
         modified_text = original_text[remove_chars:]
 
-        output_file = os.path.join(output_dir, os.path.basename(input_pdf))
+        output_file = os.path.join(output_dir, f"{Path(input_pdf).stem}.txt")
         with open(output_file, 'w', encoding='utf-8') as modified_file:
             modified_file.write(modified_text)
 
