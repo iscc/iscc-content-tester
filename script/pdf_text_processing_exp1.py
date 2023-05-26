@@ -15,9 +15,6 @@ PROCESS_PDF_COUNT = 1000  # Number of PDFs to process
 PROCESSES = 16  # Number of processes
 
 def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
-    pdf_folder_name = Path(input_pdf).stem
-    pdf_output_dir = os.path.join(output_dir, pdf_folder_name)
-
     try:
         # Parse the PDF using Tika
         parsed_pdf = parser.from_file(input_pdf)
@@ -30,24 +27,9 @@ def extract_and_modify_pdf(output_dir, cutoff_percentage, input_pdf):
         # Split the text into the original and the modified parts
         modified_text = original_text[remove_chars:]
 
-        os.makedirs(pdf_output_dir, exist_ok=True)
-
-        output_txt = os.path.join(pdf_output_dir, f"{pdf_folder_name}_collapsed.txt")
-        original_txt = os.path.join(pdf_output_dir, f"{pdf_folder_name}.txt")
-
-        # Save the original PDF as plain text
-        with open(original_txt, 'w', encoding='utf-8') as original_file:
-            original_file.write(original_text)
-
-        # Save the modified PDF as plain text
-        with open(output_txt, 'w', encoding='utf-8') as output_file:
-            output_file.write(modified_text)
-
-        # Paste the cutout in the next 1000 texts
-        for i in range(1, 1001):
-            next_txt_path = os.path.join(output_dir, f"text_{i}.txt")
-            with open(next_txt_path, 'a', encoding='utf-8') as next_txt_file:
-                next_txt_file.write(original_text[:remove_chars])
+        output_file = os.path.join(output_dir, os.path.basename(input_pdf))
+        with open(output_file, 'w', encoding='utf-8') as modified_file:
+            modified_file.write(modified_text)
 
     except Exception as e:
         print(f"Error processing {input_pdf}: {e}")
